@@ -1,0 +1,243 @@
+/*-- File: Action.cpp start --*/
+/*-- #include "Action.hpp" start --*/
+
+#include <vector>
+#include <string>
+
+class Unit;
+
+using namespace std;
+
+class Action
+{
+public:
+    int GetScore(const Unit& unit, const vector<string>& playArea) const;
+    int GetIndex() const { return index; }
+    
+    void LoadFromInput();
+    void Execute() const;
+    
+private:
+    string atype;
+    int index;
+    string dir1;
+    string dir2;
+};
+
+/*-- #include "Action.hpp" end --*/
+
+/*-- #include "Unit.hpp" start --*/
+
+/*-- #include "Vector2.hpp" start --*/
+
+class Vector2
+{
+public:
+    
+    void LoadFromInput();
+    
+    int x;
+    int y;
+};
+
+/*-- #include "Vector2.hpp" end --*/
+
+class Unit
+{
+public:
+    const Vector2& GetPosition() const { return position; }
+    
+    void LoadFromInput();
+    
+private:
+    Vector2 position;
+};
+
+/*-- #include "Unit.hpp" end --*/
+
+#include <iostream>
+#include <algorithm>
+
+static const string directions[] =
+{
+    "N",
+    "NE",
+    "E",
+    "SE",
+    "S",
+    "SW",
+    "W",
+    "NW"
+};
+
+static void GetDirections(const string& direction, int &outX, int &outY)
+{
+    static const int xDir[] =
+    {
+        0,
+        1,
+        1,
+        1,
+        0,
+        -1,
+        -1,
+        -1
+    };
+    
+    static const int yDir[] =
+    {
+        -1,
+        -1,
+        0,
+        1,
+        1,
+        1,
+        0,
+        -1
+    };
+    
+    /*int index = 0;
+    for (int i = 0; i < 8; ++i)
+    {
+        if (directions[i] == direction)
+        {
+            index = i;
+            break;
+        }
+    }*/
+    
+    const size_t index = distance(begin(directions), find(begin(directions), end(directions), direction));
+    outX = xDir[index];
+    outY = yDir[index];
+}
+
+int Action::GetScore(const Unit& unit, const vector<string>& playArea) const
+{
+    const char current = playArea[unit.GetPosition().y][unit.GetPosition().x];
+    
+    int dirX;
+    int dirY;
+    
+    GetDirections(dir1, dirX, dirY);
+    
+    int nextY = unit.GetPosition().y + dirY;
+    int nextX = unit.GetPosition().x + dirX;
+    const char move = playArea[nextY][nextX];
+    
+    GetDirections(dir2, dirX, dirY);
+    
+    const char build = playArea[nextY + dirY][nextX + dirX];
+    
+    int score = move == 1 + current ? 10 : 0;
+    score += build == 1 + current ? 10 : 0;
+    
+    score += move == '3' ? 100 : 0;
+    score += build == '3' ? -50 : 0;
+    
+    return score;
+}
+
+void Action::LoadFromInput()
+{
+    cin >> atype >> index >> dir1 >> dir2; cin.ignore();
+}
+
+void Action::Execute() const
+{
+    cout << atype << " " << index << " " << dir1 << " " << dir2 << endl;
+}
+
+/*-- File: Action.cpp end --*/
+/*-- File: Unit.cpp start --*/
+/*-- #include "Unit.hpp" start --*/
+/*-- #include "Unit.hpp" end --*/
+
+void Unit::LoadFromInput()
+{
+    position.LoadFromInput();
+}
+
+/*-- File: Unit.cpp end --*/
+/*-- File: Vector2.cpp start --*/
+/*-- #include "Vector2.hpp" start --*/
+/*-- #include "Vector2.hpp" end --*/
+
+#include <iostream>
+
+using namespace std;
+
+void Vector2::LoadFromInput()
+{
+    cin >> x >> y; cin.ignore();
+}
+
+/*-- File: Vector2.cpp end --*/
+/*-- File: main.cpp start --*/
+#include <iostream>
+#include <vector>
+
+/*-- #include "Action.hpp" start --*/
+/*-- #include "Action.hpp" end --*/
+/*-- #include "Unit.hpp" start --*/
+/*-- #include "Unit.hpp" end --*/
+
+int main()
+{
+    int size;
+    cin >> size; cin.ignore();
+    int unitsPerPlayer;
+    cin >> unitsPerPlayer; cin.ignore();
+    
+    // game loop
+    while (1)
+    {
+        vector<Action> legalActions;
+        vector<Unit> ownUnits;
+        vector<string> rows;
+        
+        for (int i = 0; i < size; i++) {
+            string row;
+            cin >> row; cin.ignore();
+            rows.push_back(row);
+        }
+        for (int i = 0; i < unitsPerPlayer; i++)
+        {
+            Unit unit;
+            unit.LoadFromInput();
+            ownUnits.push_back(unit);
+        }
+        for (int i = 0; i < unitsPerPlayer; i++) {
+            int otherX;
+            int otherY;
+            cin >> otherX >> otherY; cin.ignore();
+        }
+        int legalActionsC;
+        cin >> legalActionsC; cin.ignore();
+        for (int i = 0; i < legalActionsC; i++)
+        {
+            Action action;
+            action.LoadFromInput();
+            legalActions.push_back(action);
+        }
+        
+        Action* takenAction = nullptr;
+        int bestScore = -1;
+        //for (Unit& unit : ownUnits)
+        //{
+            for (Action& act : legalActions)
+            {
+                Unit& unit = ownUnits[act.GetIndex()];
+                int score = act.GetScore(unit, rows);
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    takenAction = &act;
+                }
+            }
+       // }
+        
+        takenAction->Execute();
+    }
+}
+
+/*-- File: main.cpp end --*/
